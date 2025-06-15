@@ -116,31 +116,40 @@ DeviceNetworkEvents
 
 *Command-and-Control (C2) Server:* `eoqsu1hq6e9ulga.m.pipedream.net`
 
-### Keylogger Artifact:
-Following execution, a suspicious file named systemreport.lnk appeared in the AppData folder.
-Its creation shortly after malware execution suggested keylogging or surveillance functionality—particularly because this was the only occurrence of that file on the system, and its timing implied intentional deployment for data collection.
+### Flag 3 – Registry-based Autorun Setup
 
-```kql
-DeviceFileEvents
-| where DeviceName contains "anthony-001"
-| where InitiatingProcessRemoteSessionDeviceName contains "bubba"
-| where Timestamp >= datetime("2025-05-07T02:00:36.794406Z")
-```
-![image](https://github.com/user-attachments/assets/7b3740ff-14cf-457b-a440-56bb2fb7bb0d)
+**Objective:** Detect whether the adversary used registry-based mechanisms to gain persistence.
 
-📌 *Artifact:* `systemreport.lnk`
+Being aware that the threat attacker employed registry-based mechanisms for persistence, the logical table to inspect is the `DeviceRegistryTable` which focuses on registry events. An important detail that was provided to us, was that the registry mechanism is utilizing an `AutoRun` method. An `AutoRun` is a method that allows programs, scripts, or processes to automatically start without user action — typically when the system boots, or when a user logs in. In general, `AutoRuns` are located in a specific location within the registry, that being: `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`. The important detail of the registry location is that the `AutoRun` mechanisms reside in the `Run` directory. A KQL query that specified this location in the registry would filter a lot of irrelevant logs.
 
-### Registry Persistence:
-Continuing, I reviewed registry modifications. A persistence key was identified in: HKEY_CURRENT_USER\S-1-5-21-2009930472-1356288797-1940124928-500\SOFTWARE\Microsoft\Windows\CurrentVersion\Run
-This entry was configured to launch BitSecSvc (an alias of the malware) on boot, establishing persistence across reboots.
 ```kql
 DeviceRegistryEvents
-| where RegistryKey contains "Run"
-| where RegistryValueData has "BitSentinelCore"
+| where DeviceName == "acolyte756"
+| where RegistryKey contains "run"
+| order by Timestamp asc
+| project Timestamp, RegistryKey, RegistryValueName, RegistryValueData, InitiatingProcessCommandLine
 ```
-![image](https://github.com/user-attachments/assets/3a05e25f-e17e-4d55-9082-b603d88490ce)
 
-📌 *Key:* `HKCU\...\Run`
+![image](https://github.com/user-attachments/assets/12ddee5c-9454-4ec8-b7f3-67d9fe697280)
+
+*Malicious AutoRun:* `C2.ps1`
+
+### Flag 4 – Scheduled Task Persistence
+
+**Objective:** Investigate the presence of alternate autorun methods used by the intruder.
+
+A "Scheduled Task" is a Windows mechanism that allows programs, commands, or scripts to run automatically at startup, on user logon, at scheduled times, or in response to specific system events. "Scheduled Tasks" are generally stored in the `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks` registry. To focus my search for any relevant malicious scheduled tasks in the `DeviceRegistryEvents` table, I queried for logs residing within the "Schedule" location in the registry.
+
+```kql
+DeviceRegistryEvents
+| where DeviceName == "acolyte756"
+| where RegistryKey contains "Schedule"
+| project Timestamp, RegistryKey, RegistryValueData, InitiatingProcessFileName
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/9eab2b57-69be-47b0-a621-ef9ee0ea16b9)
+
+*Regiatry Value of the Malicious Scheduled Task:* `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SimC2Task`
 
 ### Scheduled Task Creation:
 Additional persistence was confirmed through scheduled task creation. 
