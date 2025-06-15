@@ -57,6 +57,7 @@ But something was here…
 
 ### Identifying the Beachhead
 The key to filtering and narrowing down plausible devices that could have served as the beachhead for the attacker was understanding that the system used in the initial stage of the attack was briefly active around May 24, 2025. With the system being present in the network for a short amount of time, process activtiy logged by MDE should be less than normal in comparison to other devices on the network. I applied a filter to exlcude devices with first observed process events outside of the May 24 and May 25 range and then calculated the amount of hours each system had process activtiy occurring ('LifeTimeHours'). Ordering systems from the least amount of 'LifeTimeHours' to the most, I scanned device names to find any atypical names returned by the query.
+
 ```kql
 DeviceProcessEvents
 | where Timestamp between (datetime(2025-05-24) .. datetime(2025-05-26))
@@ -149,26 +150,45 @@ DeviceRegistryEvents
 ```
 ![image](https://github.com/user-attachments/assets/9eab2b57-69be-47b0-a621-ef9ee0ea16b9)
 
-*Regiatry Value of the Malicious Scheduled Task:* `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SimC2Task`
+*Registry Value of the Malicious Scheduled Task:* `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SimC2Task`
 
-### Scheduled Task Creation:
-Additional persistence was confirmed through scheduled task creation. 
-The most notable task was titled UpdateHealthTelemetry, a deceptively benign name likely designed to blend in with legitimate Windows health-related processes.
-This ensured long-term malware execution during system uptime.
+### Flag 5 – Obfuscated PowerShell Execution
+
+**Objective:** Uncover signs of script concealment or encoding in command-line activity.
+
+Obfuscated PowerShell commands are a common techniques malicious actors employ to conceal their activtiy within a system. These powershell commands typically contain an a flag denoting that the command is obfuscated. The PowerShell flag is usually either `-EncodedCommand` or some shorthand iteration of it, such as `-enc` or `-e`. A KQL query specifically inspecting "PowerShell" logs containing either of the previously mentioned flags would focus the search to relevant logs.
+
 ```kql
 DeviceProcessEvents
-| where DeviceName contains "anthony"
-| where ProcessCommandLine has "BitSentinelCore"
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| where ProcessCommandLine has_any("-EncodedCommand", "-enc", "-e") 
+| order by Timestamp asc 
+| project Timestamp, ProcessCommandLine, InitiatingProcessCommandLine
 ```
-![image](https://github.com/user-attachments/assets/fcbbbd34-6a90-4b43-82ee-a0b8d0c652cc)
 
-📌 *Task Name:* `UpdateHealthTelemetry`
+![image](https://github.com/user-attachments/assets/68bfcf46-b455-41c4-ad8c-0bf7f03c099a)
 
-### Process Chain:
-Pulling together the execution chain, we confirmed the sequence:
-```text
-BitSentinelCore.exe -> cmd.exe -> schtasks.exe
+*The Obfuscated Command:* `"powershell.exe" -EncodedCommand VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAFMAaQBtAHUAbABhAHQAZQBkACAAbwBiAGYAdQBzAGMAYQB0AGUAZAAgAGUAeABlAGMAdQB0AGkAbwBuACIA`
+
+### Flag 6 – Evasion via Legacy Scripting
+
+**Objective:** Detect usage of outdated script configurations likely intended to bypass modern controls.
+
+A downgrade attack is a type of cyberattack where an attacker forces a system to use weaker security protocols or outdated, less secure versions of software or hardware. A typical downgrade attack command explicitly refers to a software or hardware's version it wants to utilize. Understanding that the malicious actor has been utilizing PowerShell to carry out it's activtiy in the system, I searched for logs with the `FileName` field 
+
+```kql
+DeviceProcessEvents
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| where ProcessCommandLine contains "version"
+| project Timestamp,ProcessCommandLine
+| order by Timestamp asc
 ```
+
+![image](https://github.com/user-attachments/assets/93d2e8c7-7024-44ee-9268-8987360975ea)
+
+*The Downgrade Attack Command:* `"powershell.exe" -Version 2 -NoProfile -ExecutionPolicy Bypass -NoExit`
 
 ---
 
