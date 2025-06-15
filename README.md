@@ -81,7 +81,7 @@ Having identified the suspicious system, I cross correlated the incidents report
 
 With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
 
-This particluar log was noteworthy because the command forces a specific PowerShell version while running it silently and without logo or profile loading.
+This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
 
 ```kql
 DeviceProcessEvents
@@ -99,8 +99,9 @@ DeviceProcessEvents
 
 **Objective:** Confirm an unusual outbound communication attempt from a potentially compromised host.
 
-To validate execution, I examined the initiating process and found the command line and path traced back to explorer.exe.
-This strongly indicated that Bubba himself manually executed the malware.
+In order to identify any suspicious outbound communication from the suspected system, the 'DeviceNetworkTable' was inspected. A KQL query was created that specifically searched for events initiated by either PowerShell or CommandPrompt with an associated public `RemoteIPType', denoting an outbound connection.
+
+Using this query, I was able to filter for any relevant log with the designated parameters and identified both a relevant log and URL. An outbound connection communicating to the URL `eoqsu1hq6e9ulga.m.pipedream.net` was logged with  both the same initiating filename and the same initiating process command line as the previous flag.
 
 ```kql
 DeviceNetworkEvents
