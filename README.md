@@ -73,33 +73,47 @@ Having identified the suspicious system, I cross correlated the incidents report
 
 ![image](https://github.com/user-attachments/assets/d33180cf-6bf8-4939-a993-558ab47c1dcf)
 
+*Device:* `acolyte756`
 
-📌 *Device:* `acolyte756`
+### Flag 1 – Initial PowerShell Execution Detection
 
-### File Write via Legitimate LOLBin:
+**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
 
-Pivoting to file creation events, I filtered for files created outside normal patterns on this device.
-This revealed the drop of BitSentinelCore.exe—a fake antivirus program masquerading as a legitimate security tool. 
-Using the parent process ID, I traced its origin to csc.exe, Microsoft's legitimate C# compiler, which was exploited to compile and place the malware on disk
+With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
 
+This particluar log was noteworthy because the command forces a specific PowerShell version while running it silently and without logo or profile loading.
 
-```kql
-DeviceFileEvents
-| where FileName == "BitSentinelCore"
-```
-![image](https://github.com/user-attachments/assets/ce2d22b5-022c-4f55-94ec-09a890fb579c)
-
-📌 *Dropper Used:* `csc.exe`
-
-### Execution Path:
-To validate execution, I examined the initiating process and found the command line and path traced back to explorer.exe.
-This strongly indicated that Bubba himself manually executed the malware.
 ```kql
 DeviceProcessEvents
-| where FileName == "BitSentinelCore.exe" or InitiatingProcessFileName == "BitSentinelCore.exe"
+| where Timestamp >= datetime(2025-05-24)
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| project Timestamp,FileName,ProcessCommandLine
+| order by Timestamp asc
 ```
-![image](https://github.com/user-attachments/assets/cb242707-d915-4c3a-9b28-c0b633651ff7)
+![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
 
+*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+
+### Flag 2 – Suspicious Outbound Signal
+
+**Objective:** Confirm an unusual outbound communication attempt from a potentially compromised host.
+
+To validate execution, I examined the initiating process and found the command line and path traced back to explorer.exe.
+This strongly indicated that Bubba himself manually executed the malware.
+
+```kql
+DeviceNetworkEvents
+| where DeviceName == "acolyte756"
+| where isnotempty(RemoteUrl) 
+| where RemoteIPType == "Public"
+| where InitiatingProcessFileName has_any ("powershell.exe", "cmd.exe")
+| project Timestamp, RemoteUrl, InitiatingProcessFileName, InitiatingProcessCommandLine
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/ac864d01-2698-43db-ac02-7ef5611479b0)
+
+*Command-and-Control (C2) Server:* `eoqsu1hq6e9ulga.m.pipedream.net`
 
 ### Keylogger Artifact:
 Following execution, a suspicious file named systemreport.lnk appeared in the AppData folder.
