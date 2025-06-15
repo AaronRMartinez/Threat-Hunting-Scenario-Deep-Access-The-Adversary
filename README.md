@@ -53,19 +53,28 @@ But something was here…
 
 ---
 
-## Timeline & Queries Used
+## Threat Hunting Process
 
-### Initial Malware Execution:
-The investigation began by analyzing DeviceLogonEvents on the target system anthony-001 to determine if a breach had occurred following brute force behavior.
-The logs revealed repeated authentication attempts from IP 102.88.21.215—an address geolocated in Nigeria—which was ultimately unsuccessful. 
-However, shortly afterward, a successful logon was observed from IP 49.147.196.23 (based in the Philippines) under a device name referencing Bubba, the privileged IT admin.
+### Identifying the Beachhead
+The key to filtering and narrowing down plausible devices that could have served as the beachhead for the attacker was understanding that the system used in the initial stage of the attack was briefly active around May 24, 2025. With the system being present in the network for a short amount of time, process activtiy logged by MDE should be less than normal in comparison to other devices on the network. I applied a filter to exlcude devices with first observed process events outside of the May 24 and May 25 range and then calculated the amount of hours each system had process activtiy occurring ('LifeTimeHours'). Ordering systems from the least amount of 'LifeTimeHours' to the most, I scanned device names to find any atypical names returned by the query.
 ```kql
-DeviceLogonEvents
-| where DeviceName contains "anthony-001"
+DeviceProcessEvents
+| where Timestamp between (datetime(2025-05-24) .. datetime(2025-05-26))
+| summarize FirstSeen=min(Timestamp), LastSeen=max(Timestamp) by DeviceId, DeviceName
+| extend LifetimeHours = datetime_diff("hour", LastSeen, FirstSeen)
+| where LifetimeHours > 0 and LifetimeHours <= 12
+| project DeviceName, FirstSeen, LastSeen, LifetimeHours
 ```
-![image](https://github.com/user-attachments/assets/e54fd2ae-9dc5-4fee-a3e7-4075c6f62295)
+![image](https://github.com/user-attachments/assets/fd97ce5a-0610-4ab6-a867-3c66b3b4f3e8)
 
-📌 *Timestamp:* `2025-05-07T02:00:36.794406Z`
+![image](https://github.com/user-attachments/assets/b34e4e80-d3ee-4745-93e9-45f30b360555)
+
+Having identified the suspicious system, I cross correlated the incidents reports within MDE around May 24th to see if any alerts had been flagged on the system. Sure enough, MDE had flagged the system for malicious activtiy being present on the machine.
+
+![image](https://github.com/user-attachments/assets/d33180cf-6bf8-4939-a993-558ab47c1dcf)
+
+
+📌 *Device:* `acolyte756`
 
 ### File Write via Legitimate LOLBin:
 
@@ -141,16 +150,25 @@ BitSentinelCore.exe -> cmd.exe -> schtasks.exe
 
 ## Summary of Findings
 
-| Flag | Description                   | Answer/Value                                     |
-| ---- | ----------------------------- | ------------------------------------------------ |
-| 1    | Fake AV binary                | `BitSentinelCore.exe`                            |
-| 2    | Dropper used to write malware | `csc.exe`                                        |
-| 3    | Initial execution method      | `BitSentinelCore.exe`                            |
-| 4    | Keylogger file dropped        | `systemreport.lnk`                               |
-| 5    | Registry persistence path     | `HKEY_CURRENT_USER\...\Run`                      |
-| 6    | Scheduled task name           | `UpdateHealthTelemetry`                          |
-| 7    | Process chain                 | `BitSentinelCore.exe -> cmd.exe -> schtasks.exe` |
-| 8    | Root cause timestamp          | `2025-05-07T02:00:36.794406Z`                    |
+| Flag | MITRE Technique                    | Description                                                             |
+| ---- | ---------------------------------- | ----------------------------------------------------------------------- |
+| 1    | PowerShell                         | Initial use of PowerShell for script execution.                         |
+| 2    | Application Layer Protocol         | Beaconing via HTTPS to external infrastructure (`pipedream.net`).       |
+| 3    | Registry Run Keys/Startup Folder   | Persistence via `HKCU\...\Run` registry key with `C2.ps1`.              |
+| 4    | Scheduled Task/Job                 | Alternate persistence through scheduled task `SimC2Task`.               |
+| 5    | Obfuscated Files or Information    | Execution of base64-encoded PowerShell command.                         |
+| 6    | Indicator Removal on Host          | PowerShell v2 downgrade to bypass AMSI/logging.                         |
+| 7    | Remote Services: Scheduled Task    | Lateral movement using `schtasks.exe` targeting `victor-disa-vm`.       |
+| 8    | Lateral Tool Transfer              | Use of `.lnk` files like `savepoint_sync.lnk` to stage/pivot.           |
+| 8.1  | Registry Modification              | `savepoint_sync.ps1` registered for autorun.                            |
+| 9    | Application Layer Protocol         | New beaconing to `eo1v1texxlrdq3v.m.pipedream.net`.                     |
+| 10   | WMI Event Subscription             | Stealth persistence via WMI script `beacon_sync_job_flag2.ps1`.         |
+| 11   | Credential Dumping Simulation      | Mimic of credential access via `mimidump_sim.txt`.                      |
+| 12   | Data Staged: Local                 | Powershell process connects to `drive.google.com`.                      |
+| 13   | Data from Information Repositories | Access of sensitive doc `RolloutPlan_v8_477.docx`.                      |
+| 14   | Archive Collected Data             | Use of `Compress-Archive` to prepare ZIP payload.                       |
+| 15   | Ingress Tool Transfer              | Staging of `spicycore_loader_flag8.zip`.                                |
+| 16   | Scheduled Task/Job                 | Final scheduled task `SpicyPayloadSync` set to trigger script on logon. |
 
 ---
 
@@ -163,33 +181,6 @@ BitSentinelCore.exe -> cmd.exe -> schtasks.exe
 
 ---
 
-## Diamond Model of Intrusion Analysis
-
-| Feature            | Description                                                                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Adversary**      | APT group **The Phantom Hackers** — actors targeting privileged accounts through phishing and stealth persistence                                                |
-| **Capability**     | Malware disguised as a fake antivirus (`BitSentinelCore.exe`), leveraging LOLBins like `csc.exe`, keylogging, registry persistence, and scheduled tasks          |
-| **Infrastructure** | Remote IPs from Nigeria (`102.88.21.215`) and the Philippines (`49.147.196.23`), custom malware staging in `ProgramData`, scheduled task `UpdateHealthTelemetry` |
-| **Victim**         | Bubba Rockerfeatherman III — privileged IT admin at Acme Corp on workstation `anthony-001`                                                                       |
-
-```
-                   +-----------------------+
-                   |     Infrastructure    |
-                   |  (IPs, LOLBins, STs)  |
-                   +-----------+-----------+
-                               |
-                               v
-+----------------+     +------+-------+     +------------------+
-|   Adversary    |<--->|   Capability  |<--->|      Victim      |
-| Phantom Hackers|     | Bit AV, Reg   |     |  Bubba @ anthony |
-|                |     | Key, .lnk, ST |     |       -001       |
-+----------------+     +---------------+     +------------------+
-```
-
-
-
----
-
 ## Lessons Learned
 
 * Malware impersonating legitimate tools can easily evade static detection without behavioral telemetry.
@@ -199,5 +190,5 @@ BitSentinelCore.exe -> cmd.exe -> schtasks.exe
 
 ---
 
-**Report Completed By:** Steven Cruz
-**Status:** ✅ All 8 flags investigated and confirmed
+**Report Completed By:** Aaron Martinez
+**Status:**  flags investigated and confirmed
