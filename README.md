@@ -101,7 +101,7 @@ DeviceProcessEvents
 
 In order to identify any suspicious outbound communication from the suspected system, the 'DeviceNetworkTable' was inspected. A KQL query was created that specifically searched for events initiated by either PowerShell or CommandPrompt with an associated public `RemoteIPType', denoting an outbound connection.
 
-Using this query, I was able to filter for any relevant log with the designated parameters and identified both a relevant log and URL. An outbound connection communicating to the URL `eoqsu1hq6e9ulga.m.pipedream.net` was logged with  both the same initiating filename and the same initiating process command line as the previous flag.
+Using this query, I was able to filter for any relevant log with the designated parameters and identified both a relevant log and URL. An outbound connection communicating to the URL `eoqsu1hq6e9ulga.m.pipedream.net` was logged with  both the same initiating filename and the same initiating process command line (`"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile`) as the previous flag.
 
 ```kql
 DeviceNetworkEvents
