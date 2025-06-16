@@ -45,7 +45,7 @@ But something was here…
 ## Threat Hunting Process
 
 ### Identifying the Beachhead
-The key to filtering and narrowing down plausible devices that could have served as the beachhead for the attacker was understanding that the system used in the initial stage of the attack was briefly active around May 24, 2025. With the system being present in the network for a short amount of time, process activtiy logged by MDE should be less than normal in comparison to other devices on the network. I applied a filter to exlcude devices with first observed process events outside of the May 24 and May 25 range and then calculated the amount of hours each system had process activtiy occurring ('LifeTimeHours'). Ordering systems from the least amount of 'LifeTimeHours' to the most, I scanned device names to find any atypical names returned by the query.
+The key to filtering and narrowing down plausible devices that could have served as the beachhead for the attacker was understanding that the system used in the initial stage of the attack was briefly active around May 24, 2025. With the system being present in the network for a short amount of time, process activity logged by MDE should be less than normal in comparison to other devices on the network. I applied a filter to exlcude devices with first observed process events outside of the May 24 and May 25 range and then calculated the amount of hours each system had process activity occurring ('LifeTimeHours'). Ordering systems from the least amount of 'LifeTimeHours' to the most, I scanned device names to find any atypical names returned by the query.
 
 ```kql
 DeviceProcessEvents
@@ -59,7 +59,7 @@ DeviceProcessEvents
 
 ![image](https://github.com/user-attachments/assets/b34e4e80-d3ee-4745-93e9-45f30b360555)
 
-Having identified the suspicious system, I cross correlated the incidents reports within MDE around May 24th to see if any alerts had been flagged on the system. Sure enough, MDE had flagged the system for malicious activtiy being present on the machine.
+Having identified the suspicious system, I cross correlated the incidents reports within MDE around May 24th to see if any alerts had been flagged on the system. Sure enough, MDE had flagged the system for malicious activity being present on the machine.
 
 ![image](https://github.com/user-attachments/assets/d33180cf-6bf8-4939-a993-558ab47c1dcf)
 
@@ -164,7 +164,7 @@ DeviceProcessEvents
 
 **Objective:** Detect usage of outdated script configurations likely intended to bypass modern controls.
 
-A downgrade attack is a type of cyberattack where an attacker forces a system to use weaker security protocols or outdated, less secure versions of software or hardware. A typical downgrade attack command explicitly refers to a software or hardware's version it wants to utilize. Understanding that the malicious actor had been utilizing PowerShell to carry out it's activtiy in the system, I searched for logs with the `FileName` field and the term "version". The word "version" because it could be within a PowerShell command attempting to utilizing outdated software.
+A downgrade attack is a type of cyberattack where an attacker forces a system to use weaker security protocols or outdated, less secure versions of software or hardware. A typical downgrade attack command explicitly refers to a software or hardware's version it wants to utilize. Understanding that the malicious actor had been utilizing PowerShell to carry out it's activity in the system, I searched for logs with the `FileName` field and the term "version". The word "version" because it could be within a PowerShell command attempting to utilizing outdated software.
 
 ```kql
 DeviceProcessEvents
@@ -331,7 +331,7 @@ DeviceNetworkEvents
 
 **Objective:** Reveal whether any internal document of significance was involved.
 
-Any relevant, logged file activtiy would be found querying the `DeviceFileEvents` table. The provided hint mentions that the organization believes the threat actor may have targeted a document associated with current year's end month projects. Specifically detailing that the format of yyyy-mm would be associated with the targeted document. 
+Any relevant, logged file activity would be found querying the `DeviceFileEvents` table. The provided hint mentions that the organization believes the threat actor may have targeted a document associated with current year's end month projects. Specifically detailing that the format of yyyy-mm would be associated with the targeted document. 
 
 ```kql
 DeviceFileEvents
@@ -413,7 +413,7 @@ DeviceProcessEvents
 | 8    | savepoint_sync.lnk             | Attacker tools moved during lateral movement           |
 | 8.1  | powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Public\savepoint_sync.ps1"              | Registry data value of a configured AutoRun used for persistence                            |
 | 9    | eo1v1texxlrdq3v.m.pipedream.net         | C2 server used for remote communication on second targeted system                     |
-| 10   | 2025-05-26T02:48:07.2900744Z             | Earliest timestamp of the attacker's activtiy attempting to gain persistence with a PowerShell script via WMI        |
+| 10   | 2025-05-26T02:48:07.2900744Z             | Earliest timestamp of the attacker's activity attempting to gain persistence with a PowerShell script via WMI        |
 | 11   | mimidump_sim.txt      | Mimikatz variant used by the attacker to conduct credential harvesting                      |
 | 12   | 9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3                 | SHA256 value of the process conducting data exfiltration                      |
 | 13   | RolloutPlan_v8_477.docx | Sensitive document targeted by the attacker                      |
