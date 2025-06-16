@@ -45,7 +45,7 @@ But something was here…
 ## Threat Hunting Process
 
 ### Identifying the Beachhead
-The key to filtering and narrowing down plausible devices that could have served as the beachhead for the attacker was understanding that the system used in the initial stage of the attack was briefly active around May 24, 2025. With the system being present in the network for a short amount of time, process activity logged by MDE should be less than normal in comparison to other devices on the network. I applied a filter to exlcude devices with first observed process events outside of the May 24 and May 25 range and then calculated the amount of hours each system had process activity occurring ('LifeTimeHours'). Ordering systems from the least amount of 'LifeTimeHours' to the most, I scanned device names to find any atypical names returned by the query.
+The key to filtering and narrowing down plausible devices that could have served as the beachhead for the attacker was understanding that the system used in the initial stage of the attack was briefly active around May 24, 2025. With the system being present in the network for a short amount of time, process activity logged by MDE should be less than normal in comparison to other devices on the network. I applied a filter to exclude devices with first observed process events outside of the May 24 and May 25 range and then calculated the amount of hours each system had process activity occurring ('LifeTimeHours'). Ordering systems from the least amount of 'LifeTimeHours' to the most, I scanned device names to find any atypical names returned by the query.
 
 ```kql
 DeviceProcessEvents
@@ -71,7 +71,7 @@ Having identified the suspicious system, I cross correlated the incidents report
 
 With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
 
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+This particular log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
 
 ```kql
 DeviceProcessEvents
