@@ -310,25 +310,35 @@ DeviceProcessEvents
 
 *File:* `mimidump_sim.txt`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 12 – Unusual Outbound Transfer
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Investigate signs of potential data transfer to untrusted locations.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+Using the process event log that contained the previous flag, a SHA256 hash can be extracted from the process initiating the action. Extracting the SHA256 hash value `9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3`, the hash was used in another query within the `DeviceNetworkEvents` table to filter for relevant network logs. Using the extracted hash value to seek network events initiated by the same process SHA256 value returned network traffic to the same primary domain of the attacker's C2 server.
 
 ```kql
 DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
+| where DeviceName contains "victor-disa-vm"
 | where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
+| where ProcessCommandLine contains "mimi" or ProcessCommandLine contains "dump"
 | order by Timestamp asc
+| project Timestamp, FileName, ProcessCommandLine, InitiatingProcessSHA256
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+![image](https://github.com/user-attachments/assets/da09aac2-7e07-4309-91de-6c60d4e8ee3b)
+
+```kql
+DeviceNetworkEvents
+| where DeviceName contains "victor-disa-vm"
+| where InitiatingProcessSHA256 == "9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3"
+| where RemoteIPType == "Public"
+| order by Timestamp asc
+| project Timestamp, RemoteUrl ,InitiatingProcessFileName, InitiatingProcessCommandLine
+```
+
+![image](https://github.com/user-attachments/assets/c77c965f-6ae4-407b-b5b2-9923870c30f4)
+
+*SHA256:* `9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3`
 
 ### Flag 1 – Initial PowerShell Execution Detection
 
