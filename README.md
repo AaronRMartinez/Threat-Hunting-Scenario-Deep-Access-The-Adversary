@@ -217,6 +217,103 @@ DeviceProcessEvents
 
 *Attacker's Next Target:* `victor-disa-vm`
 
+### Flag 8 – Entry Indicators on Second Host
+
+**Objective:** Identify the subtle digital footprints left during a pivot.
+
+This flag was really tricky for me as I initially unclear what I was looking forward. Referring to what I should be searching for on the second system the attacker pivoted to, the terms "point", "sync", and "stage" were distinct to me. Looking for these terms within a process command line, I constructed a KQL query to inspect the `DeviceProcessEvents` table in the `victor-disa-vm` system. The first log entry returned the file name of the relevant flag.
+
+```kql
+DeviceProcessEvents
+| where DeviceName == "victor-disa-vm"
+| where ProcessCommandLine has_any ("stage", "point", "sync")
+| project Timestamp,FileName,ProcessCommandLine
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/775b61c1-0b2b-4740-ae90-71ec5ea327fc)
+
+*Suspicious File Name on Second Host :* `savepoint_sync.lnk`
+
+### Flag 1 – Initial PowerShell Execution Detection
+
+**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+
+With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
+
+This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+
+```kql
+DeviceProcessEvents
+| where Timestamp >= datetime(2025-05-24)
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| project Timestamp,FileName,ProcessCommandLine
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+
+*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+
+### Flag 1 – Initial PowerShell Execution Detection
+
+**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+
+With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
+
+This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+
+```kql
+DeviceProcessEvents
+| where Timestamp >= datetime(2025-05-24)
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| project Timestamp,FileName,ProcessCommandLine
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+
+*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+
+### Flag 1 – Initial PowerShell Execution Detection
+
+**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+
+With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
+
+This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+
+```kql
+DeviceProcessEvents
+| where Timestamp >= datetime(2025-05-24)
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| project Timestamp,FileName,ProcessCommandLine
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+
+*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+
+### Flag 1 – Initial PowerShell Execution Detection
+
+**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+
+With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
+
+This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+
+```kql
+DeviceProcessEvents
+| where Timestamp >= datetime(2025-05-24)
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| project Timestamp,FileName,ProcessCommandLine
+| order by Timestamp asc
+```
+![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+
+*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+
 ---
 
 ## Summary of Findings
