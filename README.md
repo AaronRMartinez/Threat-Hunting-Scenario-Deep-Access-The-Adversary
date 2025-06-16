@@ -269,25 +269,23 @@ DeviceNetworkEvents
 
 *Command-and-Control (C2) Server:* `eoqsu1hq6e9ulga.m.pipedream.net`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 10 – Stealth Mechanism Registration
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Uncover non-traditional persistence mechanisms leveraging system instrumentation.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+Throught the attack, the threat actor has utilized PowerShell scripts to establish persistence on both targeted systems. Filtering logs that involve PowerShell scripts would narrow the search. Along with it, there is explicit mention of Windows Management Instrumentation (WMI) and the term "beacon" being associated with the file name of the associated malicious file. With these specific details, a KQL query incorporating this information was created. 
 
 ```kql
 DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
+| where DeviceName contains "victor-disa-vm"
+| where ProcessCommandLine contains ".ps1" and ProcessCommandLine contains "beacon"
+| where * contains "WMI"
 | order by Timestamp asc
+| project Timestamp, FileName, ActionType, ProcessCommandLine
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+![image](https://github.com/user-attachments/assets/7544194b-7b29-4e96-8af3-d00a7099ae50)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+*Timestamp :* `2025-05-26T02:48:07.2900744Z`
 
 ### Flag 1 – Initial PowerShell Execution Detection
 
