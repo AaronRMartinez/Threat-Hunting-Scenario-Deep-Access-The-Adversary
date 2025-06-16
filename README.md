@@ -420,7 +420,8 @@ DeviceProcessEvents
 | 2    | eoqsu1hq6e9ulga.m.pipedream.net         | External command-and-control (C2) server used for remote communication      |
 | 3    | C2.ps1   | PowerShell script leveraged within the registry for persistence              |
 | 4    | HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SimC2Task                 | Registry data value of an alternate persistence mechanism configured by the threat actor               |
-| 5    | "powershell.exe" -EncodedCommand VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAFMAaQBtAHUAbABhAHQAZQBkACAAbwBiAGYAdQBzAGMAYQB0AGUAZAAgAGUAeABlAGMAdQB0AGkAbwBuACIA    | Execution of PowerShell obfuscated command                              |
+| 5    | "powershell.exe" -EncodedCommand 
+VwByAGkAdABlAC0ATwB1AHQAcAB1AHQAIAAiAFMAaQBtAHUAbABhAHQAZQBkACAAbwBiAGYAdQBzAGMAYQB0AGUAZAAgAGUAeABlAGMAdQB0AGkAbwBuACIA    | Execution of PowerShell obfuscated command                              |
 | 6    | Indicator Removal on Host          | PowerShell v2 downgrade to bypass AMSI/logging.                         |
 | 7    | Remote Services: Scheduled Task    | Lateral movement using `schtasks.exe` targeting `victor-disa-vm`.       |
 | 8    | Lateral Tool Transfer              | Use of `.lnk` files like `savepoint_sync.lnk` to stage/pivot.           |
