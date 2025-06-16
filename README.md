@@ -249,7 +249,7 @@ Having observed the threat actor use the same technique to establish persistence
 
 ```kql
 DeviceNetworkEvents
-| where DeviceName contains "victor-disa-vm"
+| where DeviceName == "victor-disa-vm"
 | where RemoteUrl contains "pipedream.net"
 | order by Timestamp asc
 | project Timestamp, ActionType, RemoteUrl, InitiatingProcessCommandLine
