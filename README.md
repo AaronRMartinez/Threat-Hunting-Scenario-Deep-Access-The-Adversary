@@ -234,25 +234,23 @@ DeviceProcessEvents
 
 *Suspicious File Name on Second Host :* `savepoint_sync.lnk`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 8.1 – Persistence Registration on Entry
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Detect attempts to embed control mechanisms within system configuration.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+From previously observed techniques employed by the attacker to gain persistence on target systems, the malicious threat actor utilizes PowerShell to establish persistent mechanisms with either a "Schedule Task" or an "AutoRun". The respective registry keys were then inspected in the `DeviceRegistryEvents` table to see if any new registry values were either created or set. The first log returned from the query provided the flag.
 
 ```kql
-DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
+DeviceRegistryEvents
+| where DeviceName == "victor-disa-vm"
+| where RegistryKey has_any("run", "schedule")
+| where ActionType == "RegistryValueSet" or ActionType == "RegistryKeyCreated"
+| project Timestamp, ActionType, RegistryKey, RegistryValueData
 | order by Timestamp asc
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+![image](https://github.com/user-attachments/assets/159787e5-158d-47d6-9ed5-7c7259ff286d)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+*Registry Value Data:* `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Public\savepoint_sync.ps1"`
 
 ### Flag 1 – Initial PowerShell Execution Detection
 
