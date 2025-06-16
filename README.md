@@ -362,7 +362,7 @@ DeviceFileEvents
 
 **Objective:** Spot behaviors related to preparing code or scripts for movement.
 
-Being aware that the threat actor was possibly compressing files in order to prepare them for movement, I focused on both common and native compression techniques. Such as either compressing the files into a "zip" file or utilizing the "7z.exe" program to compress the files. I searched the `DeviceProcessEvents` table for logs containing process command lines involving ".zip" files or the "7z.exe" program. Looking through the returned process logs, a PowerShell initiated compression of files was discovered.
+Being aware that the threat actor was possibly compressing files in order to prepare them for movement, I focused on both common and native compression techniques. Such as either compressing the files into a "zip" file or utilizing the "7z.exe" program to compress the files. I searched the `DeviceProcessEvents` table for logs containing process command lines involving ".zip" files or the "7z.exe" program. Looking through the returned process logs, a PowerShell initiated event involving the compression of files was discovered.
 
 ```kql
 DeviceProcessEvents
@@ -376,25 +376,22 @@ DeviceProcessEvents
 
 *Command:* `"powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command Compress-Archive -Path "C:\Users\Public\dropzone_spicy" -DestinationPath "C:\Users\Public\spicycore_loader_flag8.zip" -Force`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 15 – Deployment Artifact Planted
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Verify whether staged payloads were saved to disk.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+This flag was pretty straight forward after the discovery of the threat actor's command in the previous exercise. The attacker's command explicitly refers to not only the destination of file being copied, but the new of the new file being created on the system. `-DestinationPath "C:\Users\Public\spicycore_loader_flag8.zip"` Constructing a KQL query searching the `victor-disa-vm` system for the mentioned file name `spicycore_loader_flag8.zip`, verified that it had been created on the system.
 
 ```kql
-DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
+DeviceFileEvents
+| where DeviceName == "victor-disa-vm"
+| where FileName contains "spicycore_loader_flag8.zip"
 | order by Timestamp asc
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+![image](https://github.com/user-attachments/assets/f1408665-916e-452b-94f6-4fe23ec9ad6c)
+
+*Malicious Tool:* `spicycore_loader_flag8.zip`
 
 ### Flag 1 – Initial PowerShell Execution Detection
 
@@ -422,10 +419,10 @@ DeviceProcessEvents
 
 | Flag # | Flag                             | Description                                                             |
 | ---- | ---------------------------------- | ----------------------------------------------------------------------- |
-| 1    | PowerShell                         | Initial use of PowerShell for script execution.                         |
-| 2    | Application Layer Protocol         | Beaconing via HTTPS to external infrastructure (`pipedream.net`).       |
-| 3    | Registry Run Keys/Startup Folder   | Persistence via `HKCU\...\Run` registry key with `C2.ps1`.              |
-| 4    | Scheduled Task/Job                 | Alternate persistence through scheduled task `SimC2Task`.               |
+| 1    | 2025-05-25T09:14:02.3908261Z                         | Time of first observed activity by the threat actor                       |
+| 2    | eoqsu1hq6e9ulga.m.pipedream.net         | External command-and-control (C2) server used for remote communication      |
+| 3    | C2.ps1   | PowerShell script leveraged within the registry for persistence              |
+| 4    | HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SimC2Task                 | Registry data value of an alternate persistence mechanism configured by the threat actor               |
 | 5    | Obfuscated Files or Information    | Execution of base64-encoded PowerShell command.                         |
 | 6    | Indicator Removal on Host          | PowerShell v2 downgrade to bypass AMSI/logging.                         |
 | 7    | Remote Services: Scheduled Task    | Lateral movement using `schtasks.exe` targeting `victor-disa-vm`.       |
@@ -459,7 +456,3 @@ DeviceProcessEvents
 * Registry and Startup folders remain prime persistence targets.
 
 ---
-
-**Report Completed By:** Aaron Martinez
-
-**Status:**  All Flags Investigated and Found
