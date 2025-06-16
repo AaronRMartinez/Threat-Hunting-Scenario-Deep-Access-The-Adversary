@@ -380,7 +380,7 @@ DeviceProcessEvents
 
 **Objective:** Verify whether staged payloads were saved to disk.
 
-This flag was pretty straight forward after the discovery of the threat actor's command in the previous exercise. The attacker's command explicitly refers to not only the destination of file being copied, but the new of the new file being created on the system. `-DestinationPath "C:\Users\Public\spicycore_loader_flag8.zip"` Constructing a KQL query searching the `victor-disa-vm` system for the mentioned file name `spicycore_loader_flag8.zip`, verified that it had been created on the system.
+This flag was pretty straight forward after the discovery of the threat actor's command in the previous exercise. The attacker's command explicitly refers to not only the destination of where the file is being copied to, but includes the name of the new file being created on the system. `-DestinationPath "C:\Users\Public\spicycore_loader_flag8.zip"`. Constructing a KQL query searching the `victor-disa-vm` system for the mentioned file name `spicycore_loader_flag8.zip`, verified that the file had been created on the system.
 
 ```kql
 DeviceFileEvents
@@ -393,25 +393,22 @@ DeviceFileEvents
 
 *Malicious Tool:* `spicycore_loader_flag8.zip`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 16 – Persistence Trigger Finalized
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Identify automation set to invoke recently dropped content.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+The attacker wanting to gain persistence on the target system, created a schedule task to establish persistence. The threat actor had been exclusively utilizing PowerShell as the initiaiting file for their persistence techniques so sfiltering for this element would focus my search. To narrow down my query for relevant event logs, I focused on the `DeviceProcessEvents` table with process command lines containing references to schedule task activity (schtasks). 
 
 ```kql
 DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
-| order by Timestamp asc
+| where DeviceName == "victor-disa-vm"
+| where ProcessCommandLine contains "schtask"
+| order by Timestamp desc
+| project Timestamp, InitiatingProcessFileName, ProcessCommandLine
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+![image](https://github.com/user-attachments/assets/d30add62-a6af-4d02-bed3-9acb77c86ff9)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+*Timestamp of Schedule Task Creation Attempt:* `2025-05-26T07:01:01.6652736Z`
 
 ---
 
