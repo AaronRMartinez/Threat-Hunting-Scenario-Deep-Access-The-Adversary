@@ -267,7 +267,7 @@ Throught the attack, the threat actor has utilized PowerShell scripts to establi
 
 ```kql
 DeviceProcessEvents
-| where DeviceName contains "victor-disa-vm"
+| where DeviceName == "victor-disa-vm"
 | where ProcessCommandLine contains ".ps1" and ProcessCommandLine contains "beacon"
 | where * contains "WMI"
 | order by Timestamp asc
