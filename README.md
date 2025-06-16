@@ -59,7 +59,7 @@ DeviceProcessEvents
 
 ![image](https://github.com/user-attachments/assets/b34e4e80-d3ee-4745-93e9-45f30b360555)
 
-Having identified the suspicious system, I cross correlated the incidents reports within MDE around May 24th to see if any alerts had been flagged on the system. Sure enough, MDE had flagged the system for malicious activity being present on the machine.
+Having identified the suspicious system, I cross correlated the incident reports within MDE around May 24th to see if any alerts had been flagged on the system. Sure enough, MDE had flagged the system for malicious activity being present on the machine.
 
 ![image](https://github.com/user-attachments/assets/d33180cf-6bf8-4939-a993-558ab47c1dcf)
 
