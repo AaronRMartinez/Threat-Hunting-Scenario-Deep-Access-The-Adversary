@@ -431,8 +431,8 @@ DeviceProcessEvents
 | 12   | 9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3                 | SHA256 value of the process conducting data exfiltration                      |
 | 13   | RolloutPlan_v8_477.docx | Sensitive document targeted by the attacker                      |
 | 14   | "powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command Compress-Archive -Path "C:\Users\Public\dropzone_spicy" -DestinationPath "C:\Users\Public\spicycore_loader_flag8.zip" -Force             | Command line used to compress a malicious tool used by the attacker                     |
-| 15   | Ingress Tool Transfer              | Staging of `spicycore_loader_flag8.zip`.                                |
-| 16   | Scheduled Task/Job                 | Final scheduled task `SpicyPayloadSync` set to trigger script on logon. |
+| 15   | spicycore_loader_flag8.zip              | Malicious tool being leveraged by the attacker                                |
+| 16   | 2025-05-26T07:01:01.6652736Z                 | Timestamp of the `SpicyPayloadSync` scheduled task used for persistence |
 
 ---
 
