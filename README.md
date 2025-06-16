@@ -340,45 +340,41 @@ DeviceNetworkEvents
 
 *SHA256:* `9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 13 – Sensitive Asset Interaction
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Reveal whether any internal document of significance was involved.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
+Any relevant, logged file activtiy would be found querying the `DeviceFileEvents` table. The provided hint mentions that the organization believes the threat actor may have targeted a document associated with current year's end month projects. Specifically detailing that the format of yyyy-mm would be associated with the targeted document. 
 
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+```kql
+DeviceFileEvents
+| where DeviceName == "victor-disa-vm"
+| where FolderPath contains "2025-05"
+| order by Timestamp asc
+| project Timestamp, FolderPath, InitiatingProcessCommandLine
+```
+
+![image](https://github.com/user-attachments/assets/afc922b0-6935-4f04-a7db-aa3f2037115e)
+
+*Targeted File:* `RolloutPlan_v8_477.docx`
+
+### Flag 14 – Tool Packaging Activity
+
+**Objective:** Spot behaviors related to preparing code or scripts for movement.
+
+Being aware that the threat actor was possibly compressing files in order to prepare them for movement, I focused on both common and native compression techniques. Such as either compressing the files into a "zip" file or utilizing the "7z.exe" program to compress the files. I searched the `DeviceProcessEvents` table for logs containing process command lines involving ".zip" files or the "7z.exe" program. Looking through the returned process logs, a PowerShell initiated compression of files was discovered.
 
 ```kql
 DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
+| where DeviceName == "victor-disa-vm"
+| where ProcessCommandLine contains ".zip" or ProcessCommandLine contains "7z.exe"
 | order by Timestamp asc
+| project Timestamp, FileName, ProcessCommandLine
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+![image](https://github.com/user-attachments/assets/ae83be6f-da8d-484f-bd96-c8c67f8592dd)
 
-### Flag 1 – Initial PowerShell Execution Detection
-
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
-
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
-
-```kql
-DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
-| order by Timestamp asc
-```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
-
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+*Command:* `"powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command Compress-Archive -Path "C:\Users\Public\dropzone_spicy" -DestinationPath "C:\Users\Public\spicycore_loader_flag8.zip" -Force`
 
 ### Flag 1 – Initial PowerShell Execution Detection
 
@@ -424,7 +420,7 @@ DeviceProcessEvents
 
 ## Summary of Findings
 
-| Flag | MITRE Technique                    | Description                                                             |
+| Flag # | Flag                             | Description                                                             |
 | ---- | ---------------------------------- | ----------------------------------------------------------------------- |
 | 1    | PowerShell                         | Initial use of PowerShell for script execution.                         |
 | 2    | Application Layer Protocol         | Beaconing via HTTPS to external infrastructure (`pipedream.net`).       |
