@@ -42,19 +42,6 @@ But something was here…
 
 ---
 
-## Key Observations
-
-* **Initial Vector:** A fake antivirus binary named `BitSentinelCore.exe` was dropped into `C:\ProgramData\`.
-* **Dropper Used:** Legitimate Microsoft-signed binary `csc.exe` (C# compiler) was abused to compile and drop the malware.
-* **Execution:** The malware was executed via PowerShell on **2025-05-07T02:00:36.794406Z**, marking the root of the malicious chain.
-* **Keylogger:** A deceptive shortcut `systemreport.lnk` was dropped in the AppData folder to enable keystroke capture on logon.
-* **Registry Persistence:** Auto-run registry key was created at:
-  `HKEY_CURRENT_USER\S-1-5-21-2009930472-1356288797-1940124928-500\SOFTWARE\Microsoft\Windows\CurrentVersion\Run`
-* **Scheduled Task:** Named `UpdateHealthTelemetry`, this ensured long-term execution of the malware.
-* **Process Chain:** `BitSentinelCore.exe -> cmd.exe -> schtasks.exe`
-
----
-
 ## Threat Hunting Process
 
 ### Identifying the Beachhead
@@ -438,17 +425,26 @@ DeviceProcessEvents
 
 ## Response Actions
 
-* **Immediate Block:** Hashes and process signatures of `BitSentinelCore.exe` added to threat blocklists
-* **Persistence Removal:** Startup `.lnk` file, registry key, and scheduled task manually removed
-* **Telemetry Expansion:** Queries extended to check lateral movement beyond `anthony-001`
-* **Awareness:** Flag shared with Blue Team and Detection Engineering for rule creation
+* **Prevention:** Affected systems and associated accounts should have their passwords reset to prevent the stolen credentials being used to gain access to the network and systems
+* **Eradicate Discovered Malware:** Hashes and process associated with malware such as `C2.ps1`, `mimidump_sim.txt`, and `spicycore_loader_flag8.zip`
+* **Remove Persistence Mechanisms:** Inspect and remove the configured persistence mechanisms present in the "Schedule Tasks" and the "AutoRun" keys
+* **Block Command-and-Control Primary Domain:** The primary domain of the attacker's external C2 infrastructure used in communication and distribution of payloads 
+* **Conduct OSINT:** Due to the attacker targeting sensitive company data `(RolloutPlan_v8_477.docx)`, it would be prudent to check if this data is being sold on dark markets
 
 ---
 
 ## Lessons Learned
 
-* Malware impersonating legitimate tools can easily evade static detection without behavioral telemetry.
-* Scheduled tasks with realistic system names (`UpdateHealthTelemetry`) can persist undetected.
-* LOLBins like `csc.exe` can be abused to compile and deploy malware post-download.
-* Registry and Startup folders remain prime persistence targets.
+This investigation highlighted several key takeaways relevant to effective threat detection, hunting, and response operations within an enterprise environment.
 
+The initial identification of the beachhead system (acolyte756) demonstrated the value of correlating temporal process activity patterns with endpoint telemetry. By isolating devices with abnormally low ‘LifeTimeHours’ during the suspected compromise window, the scope of analysis was significantly reduced, allowing for efficient pivoting to suspicious systems.
+
+The attacker’s reliance on PowerShell-based execution with flags such as -NoProfile, -ExecutionPolicy Bypass, and explicit version enforcement (-Version 5.1) reflects a common tradecraft aimed at evading script block logging and security controls. Similarly, the detection of obfuscated PowerShell via the -EncodedCommand flag reinforced the importance of continuously monitoring for script encoding patterns that indicate potential concealment of malicious intent.
+
+Persistence mechanisms utilized by the threat actor—including registry-based AutoRun modifications and Scheduled Task creation—emphasized the need to inspect both HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run and TaskCache\Tree registry locations for anomalous entries, as these remain prevalent methods for maintaining access on compromised systems.
+
+Lateral movement activity, specifically the creation of remote scheduled tasks targeting victor-disa-vm, underscored the requirement to monitor for process activity involving schtasks.exe with remote execution parameters (/S, /U, /P). This, coupled with consistent C2 beaconing to the previously identified domain (pipedream.net subdomains), revealed a clear attempt to maintain control across multiple hosts within the environment.
+
+Finally, evidence of staging and exfiltration behavior—including file compression via PowerShell's Compress-Archive cmdlet and preparation of payloads for movement—demonstrated the necessity of scrutinizing file creation and manipulation activity (e.g., .zip, 7z.exe) as part of comprehensive threat hunting efforts.
+
+Overall, this incident reaffirmed the importance of leveraging multi-source telemetry correlation, precise KQL querying, and behavior-based detection methodologies to uncover and reconstruct adversary activity across the intrusion lifecycle. Continuous enhancement of these capabilities will be essential for reducing detection gaps and dwell time in future operations.
