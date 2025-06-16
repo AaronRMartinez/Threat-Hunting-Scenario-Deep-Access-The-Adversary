@@ -1,5 +1,7 @@
 # Threat-Hunting-Scenario-Deep-Access-The-Adversary
 
+![image](https://github.com/user-attachments/assets/f42ca88e-ef22-4b6f-9748-bbf6fe97367e)
+
 **Participant:** Aaron Martinez
 
 **Date:** June, 25 2025
@@ -175,7 +177,30 @@ DeviceProcessEvents
 
 **Objective:** Detect usage of outdated script configurations likely intended to bypass modern controls.
 
-A downgrade attack is a type of cyberattack where an attacker forces a system to use weaker security protocols or outdated, less secure versions of software or hardware. A typical downgrade attack command explicitly refers to a software or hardware's version it wants to utilize. Understanding that the malicious actor has been utilizing PowerShell to carry out it's activtiy in the system, I searched for logs with the `FileName` field 
+A downgrade attack is a type of cyberattack where an attacker forces a system to use weaker security protocols or outdated, less secure versions of software or hardware. A typical downgrade attack command explicitly refers to a software or hardware's version it wants to utilize. Understanding that the malicious actor had been utilizing PowerShell to carry out it's activtiy in the system, I searched for logs with the `FileName` field and the term "version". The word "version" because it could be within a PowerShell command attempting to utilizing outdated software.
+
+```kql
+DeviceProcessEvents
+| where DeviceName == "acolyte756"
+| where FileName contains "powershell"
+| where ProcessCommandLine contains "version"
+| project Timestamp,ProcessCommandLine
+| order by Timestamp asc
+```
+
+![image](https://github.com/user-attachments/assets/93d2e8c7-7024-44ee-9268-8987360975ea)
+
+*The Downgrade Attack Command:* `"powershell.exe" -Version 2 -NoProfile -ExecutionPolicy Bypass -NoExit`
+
+### Flag 7 – Remote Movement Discovery
+
+**Objective:** Reveal the intruder's next target beyond the initial breach point.
+
+Having previously noticed that MDE created an incident involving the suspected `acolyte756`, it flagged the device with the `Lateral Movement` tag. Which denotes that an attacker has moved laterally between endpoint systems. 
+
+![image](https://github.com/user-attachments/assets/de8621e2-328e-4122-acfb-3b3ca0886523)
+
+
 
 ```kql
 DeviceProcessEvents
