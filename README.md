@@ -425,10 +425,10 @@ DeviceProcessEvents
 | 7    | victor-disa-vm    | Target system during lateral movement by the attacker       |
 | 8    | savepoint_sync.lnk             | Attacker tools moved during lateral movement           |
 | 8.1  | powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Public\savepoint_sync.ps1"              | Registry data value of a configured AutoRun used for persistence                            |
-| 9    | Application Layer Protocol         | New beaconing to `eo1v1texxlrdq3v.m.pipedream.net`.                     |
-| 10   | WMI Event Subscription             | Stealth persistence via WMI script `beacon_sync_job_flag2.ps1`.         |
-| 11   | Credential Dumping Simulation      | Mimic of credential access via `mimidump_sim.txt`.                      |
-| 12   | Data Staged: Local                 | Powershell process connects to `drive.google.com`.                      |
+| 9    | eo1v1texxlrdq3v.m.pipedream.net         | C2 server used for remote communication on second targeted system                     |
+| 10   | 2025-05-26T02:48:07.2900744Z             | Earliest timestamp of the attacker's activtiy attempting to gain persistence with a PowerShell script via WMI        |
+| 11   | mimidump_sim.txt      | Mimikatz variant used by the attacker to conduct credential harvesting                      |
+| 12   | 9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3                 | SHA256 value of the process conducting data exfiltration                      |
 | 13   | Data from Information Repositories | Access of sensitive doc `RolloutPlan_v8_477.docx`.                      |
 | 14   | Archive Collected Data             | Use of `Compress-Archive` to prepare ZIP payload.                       |
 | 15   | Ingress Tool Transfer              | Staging of `spicycore_loader_flag8.zip`.                                |
@@ -452,4 +452,3 @@ DeviceProcessEvents
 * LOLBins like `csc.exe` can be abused to compile and deploy malware post-download.
 * Registry and Startup folders remain prime persistence targets.
 
----
