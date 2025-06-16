@@ -420,11 +420,11 @@ DeviceProcessEvents
 | 2    | eoqsu1hq6e9ulga.m.pipedream.net         | External command-and-control (C2) server used for remote communication      |
 | 3    | C2.ps1   | PowerShell script leveraged within the registry for persistence              |
 | 4    | HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SimC2Task                 | Registry data value of an alternate persistence mechanism configured by the threat actor               |
-| 5    | "powershell.exe" -EncodedCommand VwB...ACIA    | Execution of PowerShell obfuscated command                              |
-| 6    | Indicator Removal on Host          | PowerShell v2 downgrade to bypass AMSI/logging.                         |
-| 7    | Remote Services: Scheduled Task    | Lateral movement using `schtasks.exe` targeting `victor-disa-vm`.       |
-| 8    | Lateral Tool Transfer              | Use of `.lnk` files like `savepoint_sync.lnk` to stage/pivot.           |
-| 8.1  | Registry Modification              | `savepoint_sync.ps1` registered for autorun.                            |
+| 5    | "powershell.exe" -EncodedCommand VwB...ACIA    | PowerShell obfuscated command                              |
+| 6    | "powershell.exe" -Version 2 -NoProfile -ExecutionPolicy Bypass -NoExit          | Downgrade attack commandline                         |
+| 7    | victor-disa-vm    | Target system during lateral movement by the attacker       |
+| 8    | savepoint_sync.lnk             | Attacker tools moved during lateral movement           |
+| 8.1  | powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Public\savepoint_sync.ps1"              | Registry data value of a configured AutoRun used for persistence                            |
 | 9    | Application Layer Protocol         | New beaconing to `eo1v1texxlrdq3v.m.pipedream.net`.                     |
 | 10   | WMI Event Subscription             | Stealth persistence via WMI script `beacon_sync_job_flag2.ps1`.         |
 | 11   | Credential Dumping Simulation      | Mimic of credential access via `mimidump_sim.txt`.                      |
