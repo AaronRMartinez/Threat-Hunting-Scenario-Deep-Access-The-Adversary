@@ -252,25 +252,22 @@ DeviceRegistryEvents
 
 *Registry Value Data:* `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Public\savepoint_sync.ps1"`
 
-### Flag 1 – Initial PowerShell Execution Detection
+### Flag 9 – External Communication Re-established
 
-**Objective:** Pinpoint the earliest suspicious PowerShell activity that marks the intruder's possible entry.
+**Objective:** Verify if outbound signals continued from the newly touched system.
 
-With the system being indentified, finding the earliest suspicious powershell execution on the system was done by inspecting the 'DeviceProcessEvents' table. A KQL query was constructed filtering for any logs where the 'FileName' field contains the term "powershell" in it. 
-
-This particluar log was noteworthy because the command `"powershell.exe" -Version 5.1 -s -NoLogo -NoProfile` forces a specific PowerShell version while running it silently and without logo or profile loading.
+Having observed the threat actor use the same technique to establish persistence on the second system as they did with the first one, one would assume that the attacker would utilize the same C2 server as before. Narrowing the KQL query to the second system and referencing the previously discovered C2 domain name, several logs were returned that supported the assumption of the attacker establishing an outbound connection with the same C2 server.
 
 ```kql
-DeviceProcessEvents
-| where Timestamp >= datetime(2025-05-24)
-| where DeviceName == "acolyte756"
-| where FileName contains "powershell"
-| project Timestamp,FileName,ProcessCommandLine
+DeviceNetworkEvents
+| where DeviceName contains "victor-disa-vm"
+| where RemoteUrl contains "pipedream.net"
 | order by Timestamp asc
+| project Timestamp, ActionType, RemoteUrl, InitiatingProcessCommandLine
 ```
-![image](https://github.com/user-attachments/assets/38cb1de7-d47a-4913-a662-b8b373ad9384)
+![image](https://github.com/user-attachments/assets/3ea3923d-06b9-4207-9de5-d1030eadfe58)
 
-*First Suspicious PowerShell Execution:* `2025-05-25T09:14:02.3908261Z`
+*Command-and-Control (C2) Server:* `eoqsu1hq6e9ulga.m.pipedream.net`
 
 ### Flag 1 – Initial PowerShell Execution Detection
 
